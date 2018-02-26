@@ -9,6 +9,21 @@ import logging.handlers
 import errno
 from test_params import section_file
 
+# flatten a list of lists
+def iter_flatten(iterable):
+    it = iter(iterable)
+    for e in it:
+        if isinstance(e, (list, tuple)):
+            for f in iter_flatten(e):
+                yield f
+        else:
+            yield e
+
+
+def flatten(l):
+    return [e for e in iter_flatten(l)]
+
+
 
 def init_logging(level=logging.INFO, logfile=None):
     """Convenience function to initialize logging.

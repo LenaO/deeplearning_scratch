@@ -23,6 +23,61 @@ import data_agumentator as da
 import test_params as test
 from my_utils import get_logger
 
+
+class file_cache:
+
+    def __init__(self, name, path = "./"):
+        self.name = name
+        self.path = os.path.join(path, "."+self.name)
+        self._dict = {}
+        print(self.path)
+        if not os.path.exists(self.path):
+            try:
+                os.makedirs(self.path)
+            except OSError as e:
+                 if e.errno != errno.EEXIST:
+                    raise
+
+    def write_np_array(self, key, data):
+        new_path = os.path.join(self.path, str(key))
+        pyextrae.eventandcounters(6000,5)
+        np.save(new_path, data)
+        pyextrae.eventandcounters(6000, 0)
+
+    def read_np_array(self, key):
+        key = str(key)+".npy"
+        new_path = os.path.join(self.path, key)
+        if not os.path.exists(new_path):
+            return None
+        else:
+            pyextrae.eventandcounters(6000, 10)
+            crop = np.load(new_path)
+            pyextrae.eventandcounters(6000, 0)
+            return crop
+    def has(self, key):
+        key = str(key)+".npy"
+        new_path = os.path.join(self.path, key)
+        return  os.path.exists(new_path)
+
+    def keys(self):
+        return self._dict.keys()
+
+    def __getitem__(self, index):
+        if index in  self._dict.keys():
+            return self._dict[index]
+        return self.read_np_array(index)
+
+    def __setitem__(self, index, value):
+        if isinstance(value, (np.ndarray, np.generic)):
+            self.write_np_array(index, value)
+        elif isinstance(value, dict):
+            new_name = str( index)
+            self._dict[index]=file_cache(new_name, self.path)
+
+    def cleanup(self):
+        shutil.rmtree(self.path)
+
+
 batch_iterator_params = {
     # --------------------------------------------------------------------------------------------------------------
     # General parameters
@@ -482,7 +537,11 @@ class MPIBatchProducer:
                     outer_self.cache[channel][str(dset)][box['sample_num']] = crop
                     return crop
                 else:
-                    return outer_self.cache[channel][str(dset)][box['sample_num']]
+                    crop = outer_self.cache[channel][str(dset)][box['sample_num']]
+                    while crop is None:
+                        crop = outer_self.cache[channel][str(dset)][box['sample_num']]
+                    return crop
+
             self.batch_iter.get_crop = types.MethodType(get_crop, self.batch_iter)
 
 
@@ -550,7 +609,6 @@ class MPIBatchProducer:
                     # go ahead with sending batch
                     for crop in crops:
                         self.log.debug('Sending data to receiver {}'.format(self.receiver_rank))
-                        print(crop.shape)
                         self.comm.Send([crop, MPI.FLOAT], dest=self.receiver_rank, tag=DATA)
                     self.log.debug('Sending labels to receiver {}'.format(self.receiver_rank))
                     self.comm.send(labels, dest=self.receiver_rank, tag=LABELS)
@@ -667,7 +725,6 @@ class MPIBatchReceiver:
         self.comm.send(None, dest=source, tag=START)
         crops = []
         for batch_shape in self.batch_shape:
-            print(batch_shape)
             crop = np.empty(batch_shape, dtype='float32')
             self.comm.Recv([crop, MPI.FLOAT], source=source, tag=DATA)
             self.log.debug('Got data from producer {}'.format(source))
@@ -887,6 +944,7 @@ class SiameseBatchIterator(BasicBatchIterator):
             point1 = points1[i]
             point2 = points2[i]
             label = labels[i]
+          #  print("my box is {} {} {}".format(point1, point2, label))
             box = []
             for pt in (point1, point2):
                 bbox = BoundingBox(pt['transformed_point'], 10, 10, spacing=pt['spacing']*1000)
@@ -961,7 +1019,7 @@ class SiameseBatchIterator(BasicBatchIterator):
 
         #pyextrae.eventandcounters(6666, 15)
         crops = self.get_crops_for_box(box)
-       # pyextrae.eventandcounters(6666, 0)
+        #pyextrae.eventandcounters(6666, 0)
         data_augmentation_params = []
         for i in range(len(crops)):
             params = deepcopy(da.default_params)
@@ -1054,9 +1112,9 @@ class SingleBatchIterator(SiameseBatchIterator):
     def get_datum(self, **args):
         box = self.get_box()
 
-        pyextrae.eventandcounters(6666, 20)
+        #pyextrae.eventandcounters(6666, 20)
         crops = self.get_crops_for_box(box)
-        pyextrae.eventandcounters(6666, 0)
+       # pyextrae.eventandcounters(6666, 0)
         data_augmentation_params = deepcopy(da.default_params )
         data_augmentation_params.update(self.get_data_augmentation_params(crops))
         if self.laplace_rotation:
@@ -1107,7 +1165,6 @@ def get_grid_batch_iter(split, num_processes=1, rank=0):
         config = Config(test.train_params, test.data_params, test.test_params)
         net = network.build_net(input_shape=utils.get_batch_shape(config, 'test')) 
         params['label_size'] = net.outputs[0].shape.as_list()[1]
-        print('label size for grid batch iter {}'.format(params['label_size']))
     params['split'] = split
     params['batch_size'] = test.test_params['batch_size']
     params['input_size'] = test.test_params['input_size']
@@ -1125,7 +1182,6 @@ def get_predict_slice_batch_iter(brain_no, slice_no, num_processes=1, rank=0):
         config = Config(test.train_params, test.data_params, test.test_params)
         net = network.build_net(input_shape=utils.get_batch_shape(config, 'test')) 
         params['label_size'] = net.outputs[0].shape.as_list()[1]
-        print('label shape for grid batch iter {}'.format(params['label_size']))
     params['split'] = None
     params['batch_size'] = test.test_params['batch_size']
     params['input_size'] = test.test_params['input_size']

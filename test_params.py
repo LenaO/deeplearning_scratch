@@ -77,7 +77,7 @@ labels = ['bg', 'V1', 'V2', 'V3a', 'V3d', 'V4la', 'V4lp', 'V4v', 'V5', 'Vp', 'fg
 train_params = {
     # --- General Training ---
 #    'iterations': 15000,  # 35 epochs
-    'iterations': 1500,  # 35 epochs
+    'iterations': 50,  # 35 epochs
     'stop_criterium': 'max_global',
     'mode': 'regression',
     # --- Optimizer ---

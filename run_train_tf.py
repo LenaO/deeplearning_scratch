@@ -7,8 +7,11 @@ import test_params as test
 import click
 import time
 import glob
-import trainer as Tr
+import tf_trainer as TFTrainer
+import keras
 from mpi4py import MPI
+import imp
+
 
 def add_logfile(logfile):
     fh = logging.handlers.RotatingFileHandler(logfile)
@@ -121,39 +124,38 @@ def start_training(experiment_folder, resume_from, num_gpus, num_threads, cachin
 
     if mpi_params == {} or rank in mpi_params['trainer_ranks']:
 
-#        import tensorflow as tf
- #       from bigbrain.tf_trainer import TFTrainer
-#        from keras import backend as K
+        import tensorflow as tf
+        from keras import backend as K
         i = mpi_params.get('trainer_ranks', [0]).index(rank)
-#        net_def = imp.load_source('net_definition', os.path.join(experiment_folder,config.net_definition[i]))
+        net_def = imp.load_source('net_definition', os.path.join(test.current_dirname ,test.net_definition[i]))
 
         # Prepare session and graph for training
-#        tf.reset_default_graph()
-#        tf_config = tf.ConfigProto(log_device_placement=False, inter_op_parallelism_threads=num_threads)
-#        tf_config.gpu_options.allow_growth = True
-#        sess = tf.Session(config=tf_config)
-#        K.set_session(sess)
-#        K.manual_variable_initialization(True)
+        tf.reset_default_graph()
+        tf_config = tf.ConfigProto(log_device_placement=False, inter_op_parallelism_threads=num_threads)
+        tf_config.gpu_options.allow_growth = True
+        sess = tf.Session(config=tf_config)
+        K.set_session(sess)
+        K.manual_variable_initialization(True)
 
-#        if num_gpus > 1:
-#            # create net on cpu
-#            with tf.device('/cpu:0'):
-#                network = net_def.build_net()
-#            # create parallel network on gpus
-#            network.make_parallel(num_gpus)
-#        else:
-#            network = net_def.build_net()
-        trainer = Tr.SimpleTrainer(test.train_params, batch_iters[0], batch_iters[1], timestamp=timestamp)
-#        trainer.sess = sess
+        if num_gpus > 1:
+            # create net on cpu
+            with tf.device('/cpu:0'):
+                network = net_def.build_net()
+            # create parallel network on gpus
+            network.make_parallel(num_gpus)
+        else:
+            network = net_def.build_net()
+        trainer = TFTrainer(network, test.train_params, batch_iters[0], batch_iters[1], timestamp=timestamp)
+        trainer.sess = sess
 #        # --- TRAINING STARTS ---
-#        if resume_from == 'LAST':
+        if resume_from == 'LAST':
 #            # choose last snapshot from models dir
-#            resume_from = sorted(glob.glob(os.path.join(experiment_folder, 'models/iter_*.checkpoint.index')))
-#            if len(resume_from) == 0:
-#                resume_from = None
-#            else:
-#                resume_from = resume_from[-1]
-#                resume_from = resume_from.replace('.index', '')
+            resume_from = sorted(glob.glob(os.path.join(experiment_folder, 'models/iter_*.checkpoint.index')))
+            if len(resume_from) == 0:
+                resume_from = None
+            else:
+                resume_from = resume_from[-1]
+                resume_from = resume_from.replace('.index', '')
         trainer.train()
 #        # --- TRAINING ENDS ---
         for batch_iter in batch_iters:
