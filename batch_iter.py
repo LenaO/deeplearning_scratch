@@ -40,9 +40,9 @@ class file_cache:
 
     def write_np_array(self, key, data):
         new_path = os.path.join(self.path, str(key))
-        pyextrae.eventandcounters(6000,5)
+        #pyextrae.eventandcounters(6000,5)
         np.save(new_path, data)
-        pyextrae.eventandcounters(6000, 0)
+        #pyextrae.eventandcounters(6000, 0)
 
     def read_np_array(self, key):
         key = str(key)+".npy"

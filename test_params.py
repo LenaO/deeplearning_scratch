@@ -103,7 +103,7 @@ train_params = {
     'log_interval':1,
     'snapshot':1000,
     'show_activation': False,
-    'log_dir': os.path.join(current_dirname, '../../logs', basename(parent_dirname), basename(current_dirname))
+    'log_dir': os.path.join(current_dirname, 'logs', basename(parent_dirname), basename(current_dirname))
 }
 
 data_params = {

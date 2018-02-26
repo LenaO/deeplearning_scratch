@@ -7,7 +7,6 @@ import test_params as test
 import click
 import time
 import glob
-import tf_trainer as TFTrainer
 import keras
 from mpi4py import MPI
 import imp
@@ -145,6 +144,7 @@ def start_training(experiment_folder, resume_from, num_gpus, num_threads, cachin
             network.make_parallel(num_gpus)
         else:
             network = net_def.build_net()
+        from tf_trainer import TFTrainer
         trainer = TFTrainer(network, test.train_params, batch_iters[0], batch_iters[1], timestamp=timestamp)
         trainer.sess = sess
 #        # --- TRAINING STARTS ---
