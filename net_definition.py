@@ -1,4 +1,4 @@
-from bigbrain.tf_network import SiameseNetwork
+from tf_network import SiameseNetwork
 
 def build_net(input_var=None, input_shape=[(None, 1, 1019, 1019),(None, 1, 1019, 1019)]):
     siam = SiameseNetwork(input_shape[0], summary=False)

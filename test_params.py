@@ -129,11 +129,11 @@ test_params = {
 }
 
 mpi_params = {
-    'train_producer_ranks': range(0,13),
-    'test_producer_ranks': range(13,17),
-    'train_receiver_rank': 17,
-    'test_receiver_rank': 18,
-    'trainer_ranks': [19],
+    'train_producer_ranks': range(0,3),
+    'test_producer_ranks': range(3),
+    'train_receiver_rank': 5,
+    'test_receiver_rank': 6,
+    'trainer_ranks': [7],
 
     'predict_producer_ranks': range(0,18),
     'predict_receiver_rank': 18,

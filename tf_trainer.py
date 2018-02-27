@@ -4,12 +4,12 @@ from tensorflow.python.framework import ops
 from tensorflow.python.ops import math_ops
 import math
 from keras import backend as K
-from brainmap.misc import get_logger
+from my_utils import get_logger
 import os
 import numpy as np
 import time
-from bigbrain.utils import flatten
-from bigbrain.evaluation import distance_plot_for_tensorboard, confusion_matrix_for_tensorboard, coords_xyz_plot_for_tensorboard
+from my_utils import flatten
+from evaluation import distance_plot_for_tensorboard, confusion_matrix_for_tensorboard, coords_xyz_plot_for_tensorboard
 
 
 def switch_loss(labels, predictions, weights=1.0, c1=0.999, c2=1.0, c3=1.0, switch_value=1.0,
